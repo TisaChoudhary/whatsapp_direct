@@ -10,8 +10,7 @@ import {
   Type,
   Trash2,
   ClipboardPaste,
-  Cloud,
-  LogOut
+  Cloud
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
