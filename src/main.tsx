@@ -44,7 +44,7 @@ if (!PUBLISHABLE_KEY) {
           fontSize: '0.875rem'
         }}>
           1. Go to Netlify Dashboard <br/>
-          2. Site Settings > Environment Variables <br/>
+          2. Site Settings → Environment Variables <br/>
           3. Add <b>VITE_CLERK_PUBLISHABLE_KEY</b>
         </div>
         <p style={{ marginTop: '1rem', fontSize: '0.75rem', color: '#64748b' }}>
