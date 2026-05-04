@@ -6,19 +6,22 @@ import './index.css';
 import App from './App';
 
 // Import your Clerk Publishable Key
-const PUBLISHABLE_KEY = "pk_test_XXXXXXXXXXXXXXXXXXXX";
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
-  throw new Error("Missing Publishable Key")
+  console.warn("Missing Clerk Publishable Key. Auth features will not work.");
 }
 
 // Initialize GA4
-ReactGA.initialize("G-XXXXXXXXXX");
-ReactGA.send("pageview");
+const GA_ID = import.meta.env.VITE_GA_ID;
+if (GA_ID) {
+  ReactGA.initialize(GA_ID);
+  ReactGA.send("pageview");
+}
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY || ''}>
       <App />
     </ClerkProvider>
   </React.StrictMode>
