@@ -1,10 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import { registerPlugin } from '@capacitor/core';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { Contacts } from '@capacitor-community/contacts';
 import { RecentContact, ValidationResult, CountryCode } from '../types';
 import { COUNTRY_CODES } from '../constants';
+
+interface CallLogPlugin {
+  getCallLogs(): Promise<{ logs: any[] }>;
+}
+
+const CallLog = registerPlugin<CallLogPlugin>('CallLogPlugin');
 
 export const useWhatsApp = () => {
   const { user, isLoaded } = useUser();
@@ -20,12 +27,10 @@ export const useWhatsApp = () => {
   // Native Call Log Fetching (Requires Native Bridge on Android)
   const getCallLogs = async () => {
     try {
-      // Note: This requires a custom native bridge or a call-log plugin
-      // For now, we fetch contacts as a base, but in native Android Studio 
-      // we would use the READ_CALL_LOG permission.
-      console.log("Fetching call logs...");
+      const result = await CallLog.getCallLogs();
+      setCallLog(result.logs);
     } catch (e) {
-      console.warn("Call logs not available");
+      console.warn("Native Call Log plugin not found or permission denied");
     }
   };
 

@@ -26,6 +26,7 @@ import { MessageInput } from './components/MessageInput';
 import { ActionGrid } from './components/ActionGrid';
 import { HistorySection } from './components/HistorySection';
 import { ContactsSection } from './components/ContactsSection';
+import { CallsSection } from './components/CallsSection';
 import { QRModal } from './components/QRModal';
 
 const App: React.FC = () => {
@@ -47,10 +48,12 @@ const App: React.FC = () => {
     validationResult,
     contacts,
     getContacts,
+    callLog,
+    getCallLogs,
   } = useWhatsApp();
 
   const [showQR, setShowQR] = useState(false);
-  const [activeTab, setActiveTab] = useState<'recent' | 'contacts'>('recent');
+  const [activeTab, setActiveTab] = useState<'recent' | 'contacts' | 'calls'>('recent');
 
   // Initialize Native Features (Status Bar & Splash Screen)
   useEffect(() => {
@@ -62,8 +65,9 @@ const App: React.FC = () => {
         }
         await SplashScreen.hide();
         
-        // Fetch contacts if available
+        // Fetch data if available
         getContacts();
+        getCallLogs();
       } catch (e) {
         console.log("Running in browser, skipping native initialization");
       }
@@ -257,15 +261,12 @@ const App: React.FC = () => {
             />
           )}
           {activeTab === 'calls' && (
-            <div className="text-center py-12 space-y-4">
-              <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-500">
-                <Settings size={32} className="animate-spin-slow" />
-              </div>
-              <p className="text-sm font-bold">Android Call Log Bridge Required</p>
-              <p className="text-xs text-slate-500 px-8 leading-relaxed">
-                To see your actual phone calls here, you need to add the native CallLog bridge in Android Studio.
-              </p>
-            </div>
+            <CallsSection 
+              logs={callLog}
+              onSelect={setPhone}
+              isDarkMode={isDarkMode}
+              triggerHaptic={triggerHaptic}
+            />
           )}
         </motion.div>
 
