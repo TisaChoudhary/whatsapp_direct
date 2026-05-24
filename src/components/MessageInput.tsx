@@ -220,7 +220,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               onFileChange(file);
               e.target.value = '';
             }}
-            accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+            accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
             className="hidden"
           />
         </label>
