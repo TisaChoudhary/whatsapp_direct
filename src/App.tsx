@@ -52,7 +52,13 @@ const App: React.FC = () => {
     getContacts,
     callLog,
     getCallLogs,
+    attachment,
+    attachmentType,
+    attachmentPreview,
+    handleFileChange,
+    clearAttachment,
   } = useWhatsApp();
+
 
   const [showQR, setShowQR] = useState(false);
   const [activeTab, setActiveTab] = useState<'recent' | 'contacts' | 'calls' | 'help'>('recent');
@@ -104,7 +110,24 @@ const App: React.FC = () => {
     if (type === 'message') {
       saveContact(validationResult.cleaned);
       triggerHaptic('success');
-      window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      
+      if (attachment) {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [attachment] })) {
+          navigator.share({
+            files: [attachment],
+            title: 'DirectChat Attachment',
+            text: message,
+          }).catch(err => {
+            console.error("Error sharing attachment:", err);
+            window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+          });
+        } else {
+          alert("Note: Web browser API limits do not allow automatic file attachment. We will open the chat; please select the file from your gallery manually.");
+          window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+        }
+      } else {
+        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      }
     } else {
       setShowQR(true);
     }
@@ -114,7 +137,17 @@ const App: React.FC = () => {
     triggerHaptic('medium');
     const url = `https://wa.me/${validationResult.cleaned}${message ? `?text=${encodeURIComponent(message)}` : ''}`;
     
-    if (navigator.share) {
+    if (attachment && navigator.share && navigator.canShare && navigator.canShare({ files: [attachment] })) {
+      try {
+        await navigator.share({
+          files: [attachment],
+          title: 'DirectChat Attachment',
+          text: message,
+        });
+      } catch (err) {
+        console.error("Error sharing attachment:", err);
+      }
+    } else if (navigator.share) {
       try {
         await navigator.share({
           title: 'DirectChat',
@@ -206,6 +239,11 @@ const App: React.FC = () => {
               setMessage={setMessage}
               isDarkMode={isDarkMode}
               triggerHaptic={triggerHaptic}
+              attachment={attachment}
+              attachmentType={attachmentType}
+              attachmentPreview={attachmentPreview}
+              onFileChange={handleFileChange}
+              onClearAttachment={clearAttachment}
             />
 
             <ActionGrid 

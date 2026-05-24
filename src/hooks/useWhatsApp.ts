@@ -23,6 +23,46 @@ export const useWhatsApp = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [contacts, setContacts] = useState<any[]>([]);
   const [callLog, setCallLog] = useState<any[]>([]);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [attachmentType, setAttachmentType] = useState<'image' | 'video' | 'document' | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+
+  const handleFileChange = (file: File | null) => {
+    if (!file) {
+      clearAttachment();
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      setError("File is too large (max 15MB)");
+      triggerHaptic('medium');
+      return;
+    }
+
+    setAttachment(file);
+    setError('');
+
+    if (file.type.startsWith('image/')) {
+      setAttachmentType('image');
+      setAttachmentPreview(URL.createObjectURL(file));
+    } else if (file.type.startsWith('video/')) {
+      setAttachmentType('video');
+      setAttachmentPreview(URL.createObjectURL(file));
+    } else {
+      setAttachmentType('document');
+      setAttachmentPreview(null);
+    }
+    triggerHaptic('light');
+  };
+
+  const clearAttachment = () => {
+    if (attachmentPreview) {
+      URL.revokeObjectURL(attachmentPreview);
+    }
+    setAttachment(null);
+    setAttachmentType(null);
+    setAttachmentPreview(null);
+  };
 
   // Native Call Log Fetching (Requires Native Bridge on Android)
   const getCallLogs = async () => {
@@ -136,5 +176,11 @@ export const useWhatsApp = () => {
     getContacts,
     callLog,
     getCallLogs,
+    attachment,
+    attachmentType,
+    attachmentPreview,
+    handleFileChange,
+    clearAttachment,
   };
 };
+
