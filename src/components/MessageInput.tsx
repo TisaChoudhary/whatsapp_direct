@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Type, Paperclip, X, FileText, Video, Mic, Trash2, Check, Play, Pause } from 'lucide-react';
+import { Type, X, FileText, Video, Mic, Trash2, Check, Play, Pause, Image } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TEMPLATES } from '../constants';
 import { cn } from '../lib/utils';
@@ -206,13 +206,16 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       </div>
       
       {/* Templates & Actions Trigger Row */}
-      <div className="flex gap-2 items-center">
-        {/* Attachment Button */}
-        <label className={cn(
-          "cursor-pointer p-2.5 rounded-xl border transition-all active:scale-95 flex items-center justify-center tap-highlight-none shrink-0",
-          isDarkMode ? "bg-slate-900/50 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30" : "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
-        )}>
-          <Paperclip size={14} />
+      <div className="flex gap-1.5 items-center">
+        {/* Media Button (Images/Videos) */}
+        <label 
+          title="Attach Image or Video"
+          className={cn(
+            "cursor-pointer p-2.5 rounded-xl border transition-all active:scale-95 flex items-center justify-center tap-highlight-none shrink-0",
+            isDarkMode ? "bg-slate-900/50 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30" : "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
+          )}
+        >
+          <Image size={14} />
           <input 
             type="file" 
             onChange={(e) => {
@@ -220,7 +223,28 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               onFileChange(file);
               e.target.value = '';
             }}
-            accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+            accept="image/*,video/*"
+            className="hidden"
+          />
+        </label>
+
+        {/* Document Button */}
+        <label 
+          title="Attach Document"
+          className={cn(
+            "cursor-pointer p-2.5 rounded-xl border transition-all active:scale-95 flex items-center justify-center tap-highlight-none shrink-0",
+            isDarkMode ? "bg-slate-900/50 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30" : "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
+          )}
+        >
+          <FileText size={14} />
+          <input 
+            type="file" 
+            onChange={(e) => {
+              const file = e.target.files?.[0] || null;
+              onFileChange(file);
+              e.target.value = '';
+            }}
+            accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
             className="hidden"
           />
         </label>
@@ -240,7 +264,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         </button>
         
         {/* Templates */}
-        <div className="flex gap-2 overflow-x-auto py-1 no-scrollbar flex-1 -mr-1 pr-1">
+        <div className="flex gap-1.5 overflow-x-auto py-1 no-scrollbar flex-1 -mr-1 pr-1">
           {TEMPLATES.map((t) => (
             <button
               key={t}
