@@ -29,10 +29,15 @@ export const useWhatsApp = () => {
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingVolume, setRecordingVolume] = useState<number>(0);
+  const [audioDuration, setAudioDuration] = useState<number>(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<any>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   const handleFileChange = (file: File | null) => {
     if (!file) {
@@ -93,7 +98,38 @@ export const useWhatsApp = () => {
       mediaRecorder.start();
       setIsRecording(true);
       setRecordingDuration(0);
+      setRecordingVolume(0);
       triggerHaptic('success');
+
+      // Set up Audio Context and Analyser for real-time volume detection
+      try {
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 64; // Small fftSize for fast, simple volume estimation
+        source.connect(analyser);
+
+        audioContextRef.current = audioContext;
+        analyserRef.current = analyser;
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const checkVolume = () => {
+          if (!analyserRef.current) return;
+          analyserRef.current.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const average = sum / dataArray.length;
+          // Scale it to a percentage (typical values peak around 120-150 in normal speech)
+          const normalizedVolume = Math.min(100, Math.round((average / 128) * 100));
+          setRecordingVolume(normalizedVolume);
+          animationFrameRef.current = requestAnimationFrame(checkVolume);
+        };
+        checkVolume();
+      } catch (err) {
+        console.warn("Failed to initialize audio analyzer context", err);
+      }
 
       timerRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
@@ -114,6 +150,18 @@ export const useWhatsApp = () => {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+
+    // Clean up volume tracking
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+    analyserRef.current = null;
+    setRecordingVolume(0);
 
     mediaRecorder.onstop = () => {
       const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
@@ -136,6 +184,7 @@ export const useWhatsApp = () => {
         setAttachment(file);
         setAttachmentType('audio');
         setAttachmentPreview(URL.createObjectURL(file));
+        setAudioDuration(recordingDuration);
         triggerHaptic('success');
       }
     };
@@ -148,6 +197,8 @@ export const useWhatsApp = () => {
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      if (audioContextRef.current) audioContextRef.current.close().catch(() => {});
     };
   }, []);
 
@@ -273,6 +324,8 @@ export const useWhatsApp = () => {
     recordingDuration,
     startRecording,
     stopRecording,
+    recordingVolume,
+    audioDuration,
   };
 };
 

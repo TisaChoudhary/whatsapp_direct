@@ -60,6 +60,8 @@ const App: React.FC = () => {
     recordingDuration,
     startRecording,
     stopRecording,
+    recordingVolume,
+    audioDuration,
   } = useWhatsApp();
 
 
@@ -252,6 +254,8 @@ const App: React.FC = () => {
               recordingDuration={recordingDuration}
               onStartRecording={startRecording}
               onStopRecording={stopRecording}
+              recordingVolume={recordingVolume}
+              audioDuration={audioDuration}
             />
 
             <ActionGrid 
