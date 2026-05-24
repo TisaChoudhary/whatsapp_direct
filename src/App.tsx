@@ -28,6 +28,8 @@ import { HistorySection } from './components/HistorySection';
 import { ContactsSection } from './components/ContactsSection';
 import { CallsSection } from './components/CallsSection';
 import { QRModal } from './components/QRModal';
+import { HelpSection } from './components/HelpSection';
+
 
 const App: React.FC = () => {
   const {
@@ -53,7 +55,7 @@ const App: React.FC = () => {
   } = useWhatsApp();
 
   const [showQR, setShowQR] = useState(false);
-  const [activeTab, setActiveTab] = useState<'recent' | 'contacts' | 'calls'>('recent');
+  const [activeTab, setActiveTab] = useState<'recent' | 'contacts' | 'calls' | 'help'>('recent');
 
   // Initialize Native Features (Status Bar & Splash Screen)
   useEffect(() => {
@@ -214,12 +216,13 @@ const App: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Tabs for Recent / Contacts / Calls */}
-        <div className="flex gap-2 p-1 bg-slate-900/40 rounded-2xl border border-slate-800/50">
+        {/* Tabs for Recent / Contacts / Calls / Help */}
+        <div className="flex gap-1.5 p-1 bg-slate-900/40 rounded-2xl border border-slate-800/50">
           {[
             { id: 'recent', label: 'Recent' },
             { id: 'contacts', label: 'Contacts' },
-            { id: 'calls', label: 'Calls' }
+            { id: 'calls', label: 'Calls' },
+            { id: 'help', label: 'Help' }
           ].map((tab) => (
             <button 
               key={tab.id}
@@ -264,6 +267,12 @@ const App: React.FC = () => {
             <CallsSection 
               logs={callLog}
               onSelect={setPhone}
+              isDarkMode={isDarkMode}
+              triggerHaptic={triggerHaptic}
+            />
+          )}
+          {activeTab === 'help' && (
+            <HelpSection 
               isDarkMode={isDarkMode}
               triggerHaptic={triggerHaptic}
             />

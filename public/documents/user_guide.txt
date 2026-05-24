@@ -1,0 +1,21 @@
+DirectChat User Guide
+=====================
+
+DirectChat allows you to open WhatsApp chats with any number without saving them.
+
+Quick Start:
+1. Select your country code.
+2. Enter the phone number.
+3. Write an optional pre-filled message.
+4. Click "Send Message" to redirect to WhatsApp, or "Scan to Chat" to generate a QR Code.
+
+Supported Platforms:
+- Web browsers (Chrome, Safari, Firefox, Edge)
+- Android (via APK/Capacitor native app)
+- iOS (via IPA/Capacitor native app)
+
+Features:
+- Dark / Light theme.
+- Clerk Auth Cloud Sync: syncs recent contact numbers across devices.
+- Contacts Access: choose from device contacts.
+- Recent Calls: load numbers from your phone's call history.
