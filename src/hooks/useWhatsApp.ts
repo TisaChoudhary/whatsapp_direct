@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useUserWrapper as useUser } from '../lib/clerk';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { registerPlugin } from '@capacitor/core';
@@ -24,8 +24,15 @@ export const useWhatsApp = () => {
   const [contacts, setContacts] = useState<any[]>([]);
   const [callLog, setCallLog] = useState<any[]>([]);
   const [attachment, setAttachment] = useState<File | null>(null);
-  const [attachmentType, setAttachmentType] = useState<'image' | 'video' | 'document' | null>(null);
+  const [attachmentType, setAttachmentType] = useState<'image' | 'video' | 'document' | 'audio' | null>(null);
   const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<any>(null);
 
   const handleFileChange = (file: File | null) => {
     if (!file) {
@@ -63,6 +70,87 @@ export const useWhatsApp = () => {
     setAttachmentType(null);
     setAttachmentPreview(null);
   };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+
+      let options = { mimeType: 'audio/webm' };
+      if (!MediaRecorder.isTypeSupported('audio/webm')) {
+        options = { mimeType: 'audio/mp4' };
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingDuration(0);
+      triggerHaptic('success');
+
+      timerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      setError("Microphone access denied or not supported.");
+      triggerHaptic('medium');
+    }
+  };
+
+  const stopRecording = (shouldSave: boolean) => {
+    const mediaRecorder = mediaRecorderRef.current;
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    mediaRecorder.onstop = () => {
+      const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
+      
+      const stream = mediaRecorder.stream;
+      stream.getTracks().forEach((track) => track.stop());
+
+      if (shouldSave) {
+        const extension = mediaRecorder.mimeType.includes('mp4') ? 'm4a' : 'webm';
+        const file = new File([audioBlob], `voice-note-${Date.now()}.${extension}`, {
+          type: mediaRecorder.mimeType,
+        });
+
+        if (file.size > 15 * 1024 * 1024) {
+          setError("Voice note is too large");
+          triggerHaptic('medium');
+          return;
+        }
+
+        setAttachment(file);
+        setAttachmentType('audio');
+        setAttachmentPreview(URL.createObjectURL(file));
+        triggerHaptic('success');
+      }
+    };
+
+    mediaRecorder.stop();
+    setIsRecording(false);
+    triggerHaptic('light');
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
 
   // Native Call Log Fetching (Requires Native Bridge on Android)
   const getCallLogs = async () => {
@@ -181,6 +269,10 @@ export const useWhatsApp = () => {
     attachmentPreview,
     handleFileChange,
     clearAttachment,
+    isRecording,
+    recordingDuration,
+    startRecording,
+    stopRecording,
   };
 };
 
