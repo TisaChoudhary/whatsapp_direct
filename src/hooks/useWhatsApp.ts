@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useUser } from '@clerk/clerk-react';
+import { useUserWrapper as useUser } from '../lib/clerk';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { registerPlugin } from '@capacitor/core';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';

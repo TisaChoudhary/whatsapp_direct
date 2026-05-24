@@ -10,7 +10,7 @@ import {
   SignedOut, 
   SignInButton, 
   UserButton 
-} from '@clerk/clerk-react';
+} from './lib/clerk';
 import { motion } from 'framer-motion';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { SplashScreen } from '@capacitor/splash-screen';
