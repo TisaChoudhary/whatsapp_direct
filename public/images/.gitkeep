@@ -1,1 +1,12 @@
 # Placeholder to ensure this directory is tracked by Git
+
+powershell
+git push origin master
+Why this is safe for the Main Repo
+Doing this only updates your fork (TisaChoudhary/whatsapp_direct). The main upstream repository will remain completely untouched. The main repository can only receive changes if you go to GitHub and explicitly click "New Pull Request" to merg
+C. Adding a Link to Download or View a Document (e.g., PDF)
+tsx
+<a 
+  href="/documents/user-guide.pdf" 
+  target="_blank" 
+  rel="noopener noreferrer"
