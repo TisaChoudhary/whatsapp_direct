@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Type, X, FileText, Video, Mic, Trash2, Check, Play, Pause, Image } from 'lucide-react';
+import { Paperclip, Image, FileText, Mic, Send, Trash2, Check, X, Play, Pause } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TEMPLATES } from '../constants';
 import { cn } from '../lib/utils';
@@ -20,6 +20,7 @@ interface MessageInputProps {
   onStopRecording: (save: boolean) => void;
   recordingVolume?: number;
   audioDuration?: number;
+  onSend?: () => void;
 }
 
 const AudioPreviewPlayer: React.FC<{ src: string; initialDuration?: number }> = ({ src, initialDuration }) => {
@@ -76,11 +77,11 @@ const AudioPreviewPlayer: React.FC<{ src: string; initialDuration?: number }> = 
       />
       <button 
         onClick={togglePlay}
-        className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shrink-0 active:scale-95 transition-all"
+        className="w-8 h-8 rounded-full bg-wa-green hover:bg-emerald-600 text-white flex items-center justify-center shrink-0 active:scale-95 transition-all shadow-sm"
       >
         {isPlaying ? <Pause size={14} /> : <Play size={14} className="ml-0.5" />}
       </button>
-      <div className="min-w-0 flex-1 flex flex-col gap-1 text-left">
+      <div className="min-w-0 flex-1 flex flex-col gap-0.5 text-left">
         <div className="flex justify-between items-center gap-2">
           <p className="text-[11px] font-bold truncate">Voice Note Preview</p>
           <span className="text-[9px] font-mono text-slate-500">
@@ -94,7 +95,7 @@ const AudioPreviewPlayer: React.FC<{ src: string; initialDuration?: number }> = 
           step="0.05"
           value={currentTime}
           onChange={handleScrub}
-          className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 outline-none"
+          className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-wa-green outline-none"
         />
       </div>
     </div>
@@ -117,7 +118,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onStopRecording,
   recordingVolume = 0,
   audioDuration = 0,
+  onSend,
 }) => {
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
 
   const formatDuration = (sec: number) => {
@@ -147,59 +150,83 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     }
   };
 
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center px-1">
-        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
-          <Type size={10} className="text-emerald-500" /> Message
-        </label>
-        <span className="text-[10px] text-slate-600 font-mono">{message.length}/500</span>
-      </div>
+  const hasContent = message.trim().length > 0 || attachment !== null;
 
-      <AnimatePresence mode="wait">
-        {/* Attachment Preview Card */}
-        {attachment && (
+  const handleRightButtonClick = () => {
+    if (isRecording) {
+      triggerHaptic('success');
+      onStopRecording(true);
+    } else if (hasContent) {
+      if (onSend) onSend();
+    } else {
+      triggerHaptic('medium');
+      onStartRecording();
+    }
+  };
+
+  return (
+    <div className="w-full flex flex-col gap-2 relative">
+      
+      {/* Templates horizontal bar (floating above input bar) */}
+      {!isRecording && (
+        <div className="flex gap-1.5 overflow-x-auto py-1 px-4 no-scrollbar -mx-4">
+          {TEMPLATES.map((t) => (
+            <button
+              key={t}
+              onClick={() => {
+                triggerHaptic('light');
+                setMessage(t);
+              }}
+              className={cn(
+                "whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all active:scale-95 shrink-0 shadow-sm",
+                isDarkMode 
+                  ? "bg-wa-header-dark border-slate-800 text-slate-300 hover:text-wa-green hover:border-wa-green/30" 
+                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+              )}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Attachment & Voice note status popup block */}
+      <AnimatePresence>
+        {attachment && !isRecording && (
           <motion.div 
-            initial={{ opacity: 0, height: 0, y: -10 }}
-            animate={{ opacity: 1, height: 'auto', y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -10 }}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 15 }}
             className={cn(
-              "p-3 rounded-2xl border flex items-center justify-between gap-3 relative overflow-hidden mb-2",
-              isDarkMode ? "bg-slate-900/50 border-slate-800" : "bg-slate-50 border-slate-200"
+              "p-3 rounded-xl border flex items-center justify-between gap-3 relative shadow-md mx-2",
+              isDarkMode ? "bg-wa-header-dark border-slate-800" : "bg-white border-slate-200"
             )}
           >
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              {/* Visual Thumbnail / Icon */}
               {attachmentType === 'image' && attachmentPreview && (
                 <img 
                   src={attachmentPreview} 
                   alt="Upload Preview" 
                   onClick={() => setShowFullscreen(true)}
-                  className="w-12 h-12 object-cover rounded-xl border border-white/10 shrink-0 cursor-zoom-in hover:scale-105 transition-transform duration-200"
+                  className="w-11 h-11 object-cover rounded-lg border border-slate-700/30 shrink-0 cursor-zoom-in hover:scale-105 transition-transform duration-200"
                 />
               )}
               {attachmentType === 'video' && attachmentPreview && (
-                <div className="w-12 h-12 rounded-xl overflow-hidden border border-blue-500/20 shrink-0 relative group bg-black">
+                <div className="w-11 h-11 rounded-lg overflow-hidden border border-slate-700/30 shrink-0 relative bg-black">
                   <video 
                     src={attachmentPreview} 
                     className="w-full h-full object-cover" 
                     muted 
-                    loop
                     playsInline
-                    onMouseOver={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
-                    onMouseOut={(e) => (e.target as HTMLVideoElement).pause()}
                   />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-100 group-hover:opacity-0 transition-opacity">
-                    <Video size={14} className="text-white" />
-                  </div>
                 </div>
               )}
               {attachmentType === 'document' && (
                 <div className={cn(
-                  "w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border text-[9px] font-bold tracking-wider",
+                  "w-11 h-11 rounded-lg flex flex-col items-center justify-center shrink-0 border text-[8px] font-bold tracking-wider",
                   getDocExtensionInfo(attachment.name).bg
                 )}>
-                  <FileText size={16} className="mb-0.5" />
+                  <FileText size={14} className="mb-0.5" />
                   <span>{getDocExtensionInfo(attachment.name).label}</span>
                 </div>
               )}
@@ -207,10 +234,9 @@ export const MessageInput: React.FC<MessageInputProps> = ({
                 <AudioPreviewPlayer src={attachmentPreview} initialDuration={audioDuration} />
               )}
 
-              {/* File Info for Non-Audio Attachments */}
               {attachmentType !== 'audio' && (
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold truncate tracking-tight text-left">
+                  <p className="text-xs font-bold truncate text-left">
                     {attachment.name}
                   </p>
                   <p className="text-[10px] text-slate-500 font-mono text-left">
@@ -220,174 +246,177 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               )}
             </div>
 
-            {/* Delete Button */}
             <button 
               onClick={() => {
                 triggerHaptic('medium');
                 onClearAttachment();
               }}
-              className="p-1.5 rounded-full hover:bg-slate-800/20 text-slate-500 hover:text-red-400 transition-colors shrink-0 tap-highlight-none"
+              className={cn(
+                "p-1.5 rounded-full transition-colors shrink-0 tap-highlight-none",
+                isDarkMode ? "hover:bg-slate-800 text-slate-400 hover:text-red-400" : "hover:bg-slate-100 text-slate-500 hover:text-red-500"
+              )}
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="relative">
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder={isRecording ? "" : "Hello! Let's chat..."}
-          rows={3}
-          maxLength={500}
-          disabled={isRecording}
-          className={cn(
-            "w-full p-4 rounded-2xl border focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all resize-none font-medium",
-            isDarkMode ? "bg-slate-900/80 border-slate-800 placeholder:text-slate-700 text-slate-100" : "bg-white border-slate-200 text-slate-900",
-            isRecording && "opacity-20 cursor-not-allowed"
-          )}
-        />
-
-        {/* Recording Overlay Dashboard */}
-        <AnimatePresence>
-          {isRecording && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+      {/* Main WhatsApp-style Footer Row */}
+      <div className={cn(
+        "rounded-2xl p-2 flex items-end gap-2.5 shadow-md relative",
+        isDarkMode ? "bg-wa-header-dark" : "bg-wa-header-light"
+      )}>
+        
+        {/* Attachment menu trigger */}
+        {!isRecording && (
+          <div className="relative shrink-0 mb-0.5">
+            <button 
+              onClick={() => { triggerHaptic('light'); setShowAttachMenu(!showAttachMenu); }}
               className={cn(
-                "absolute inset-0 rounded-2xl flex items-center justify-between px-6 border backdrop-blur-md",
-                isDarkMode ? "bg-slate-950/90 border-slate-800" : "bg-white/90 border-slate-200"
+                "w-9 h-9 rounded-full flex items-center justify-center transition-all tap-highlight-none",
+                showAttachMenu 
+                  ? "bg-slate-800 text-wa-green" 
+                  : isDarkMode ? "text-slate-400 hover:bg-slate-800 hover:text-slate-200" : "text-slate-500 hover:bg-slate-200 hover:text-slate-800"
               )}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shrink-0" />
-                <div className="text-left min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-widest text-red-500">Recording Audio</p>
-                  
-                  {/* Waveform Visualizer */}
-                  <div className="flex items-center gap-0.5 h-4 mt-1">
-                    {[0.5, 0.8, 1.2, 0.7, 1.5, 1.0, 0.6, 1.1, 0.4].map((factor, index) => {
-                      const barHeight = Math.max(3, Math.min(16, recordingVolume * 0.16 * factor));
-                      return (
-                        <motion.div
-                          key={index}
-                          animate={{ height: barHeight }}
-                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                          className="w-0.5 bg-red-500/80 rounded-full"
-                        />
-                      );
-                    })}
-                  </div>
+              <Paperclip size={18} className={cn("transition-transform duration-200", showAttachMenu && "rotate-45")} />
+            </button>
+
+            {/* Slide up Attachment Dropdown */}
+            <AnimatePresence>
+              {showAttachMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowAttachMenu(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                    className={cn(
+                      "absolute bottom-12 left-0 z-50 p-2 rounded-xl shadow-xl border flex flex-col gap-1.5 min-w-[150px] origin-bottom-left",
+                      isDarkMode ? "bg-slate-900 border-slate-850" : "bg-white border-slate-200"
+                    )}
+                  >
+                    <label className={cn(
+                      "flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold transition-colors",
+                      isDarkMode ? "hover:bg-slate-800 text-slate-350" : "hover:bg-slate-100 text-slate-700"
+                    )}>
+                      <Image size={15} className="text-blue-400" />
+                      <span>Photos & Videos</span>
+                      <input 
+                        type="file" 
+                        onChange={(e) => {
+                          onFileChange(e.target.files?.[0] || null);
+                          setShowAttachMenu(false);
+                          e.target.value = '';
+                        }}
+                        accept="image/*,video/*"
+                        className="hidden"
+                      />
+                    </label>
+
+                    <label className={cn(
+                      "flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer text-xs font-semibold transition-colors",
+                      isDarkMode ? "hover:bg-slate-800 text-slate-355" : "hover:bg-slate-100 text-slate-700"
+                    )}>
+                      <FileText size={15} className="text-purple-400" />
+                      <span>Document</span>
+                      <input 
+                        type="file" 
+                        onChange={(e) => {
+                          onFileChange(e.target.files?.[0] || null);
+                          setShowAttachMenu(false);
+                          e.target.value = '';
+                        }}
+                        accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                        className="hidden"
+                      />
+                    </label>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* Dynamic input bar / Audio Visualizer overlay */}
+        <div className="flex-1 relative min-h-[38px] flex items-center">
+          {isRecording ? (
+            <div className="flex-1 flex items-center justify-between px-2 text-left">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                <span className="text-xs font-bold text-red-500 uppercase tracking-wider">Recording</span>
+                
+                {/* Visualizer Wave */}
+                <div className="flex items-center gap-0.5 h-3 ml-2">
+                  {[0.5, 1.2, 0.7, 1.5, 0.9, 0.4].map((factor, index) => {
+                    const barHeight = Math.max(2, Math.min(12, recordingVolume * 0.12 * factor));
+                    return (
+                      <motion.div
+                        key={index}
+                        animate={{ height: barHeight }}
+                        className="w-0.5 bg-red-500/80 rounded-full"
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <span className="text-lg font-bold font-mono text-emerald-500 tracking-tight">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold font-mono text-wa-green">
                   {formatDuration(recordingDuration)}
                 </span>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => { triggerHaptic('medium'); onStopRecording(false); }}
-                    title="Discard Recording"
-                    className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-colors active:scale-95"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                  <button 
-                    onClick={() => { triggerHaptic('success'); onStopRecording(true); }}
-                    title="Save Voice Note"
-                    className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-colors active:scale-95"
-                  >
-                    <Check size={16} />
-                  </button>
-                </div>
+                <button 
+                  onClick={() => { triggerHaptic('medium'); onStopRecording(false); }}
+                  className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors"
+                  title="Discard"
+                >
+                  <Trash2 size={13} />
+                </button>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      
-      {/* Templates & Actions Trigger Row */}
-      <div className="flex gap-1.5 items-center">
-        {/* Media Button (Images/Videos) */}
-        <label 
-          title="Attach Image or Video"
-          className={cn(
-            "cursor-pointer p-2.5 rounded-xl border transition-all active:scale-95 flex items-center justify-center tap-highlight-none shrink-0",
-            isDarkMode ? "bg-slate-900/50 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30" : "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
-          )}
-        >
-          <Image size={14} />
-          <input 
-            type="file" 
-            onChange={(e) => {
-              const file = e.target.files?.[0] || null;
-              onFileChange(file);
-              e.target.value = '';
-            }}
-            accept="image/*,video/*"
-            className="hidden"
-          />
-        </label>
-
-        {/* Document Button */}
-        <label 
-          title="Attach Document"
-          className={cn(
-            "cursor-pointer p-2.5 rounded-xl border transition-all active:scale-95 flex items-center justify-center tap-highlight-none shrink-0",
-            isDarkMode ? "bg-slate-900/50 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30" : "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200"
-          )}
-        >
-          <FileText size={14} />
-          <input 
-            type="file" 
-            onChange={(e) => {
-              const file = e.target.files?.[0] || null;
-              onFileChange(file);
-              e.target.value = '';
-            }}
-            accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
-            className="hidden"
-          />
-        </label>
-
-        {/* Voice Note Button */}
-        <button
-          onClick={() => { triggerHaptic('medium'); onStartRecording(); }}
-          disabled={isRecording}
-          title="Record Voice Note"
-          className={cn(
-            "p-2.5 rounded-xl border transition-all active:scale-95 flex items-center justify-center tap-highlight-none shrink-0",
-            isDarkMode ? "bg-slate-900/50 border-slate-800 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30" : "bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200",
-            isRecording && "opacity-30 cursor-not-allowed"
-          )}
-        >
-          <Mic size={14} />
-        </button>
-        
-        {/* Templates */}
-        <div className="flex gap-1.5 overflow-x-auto py-1 no-scrollbar flex-1 -mr-1 pr-1">
-          {TEMPLATES.map((t) => (
-            <button
-              key={t}
-              onClick={() => {
-                triggerHaptic('light');
-                setMessage(t);
-              }}
+            </div>
+          ) : (
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Type a message"
+              rows={1}
+              maxLength={500}
               className={cn(
-                "whitespace-nowrap px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all active:scale-95",
-                isDarkMode ? "bg-slate-900/50 border-slate-800 text-slate-400 hover:text-emerald-400" : "bg-slate-100 border-slate-200 text-slate-600"
+                "w-full py-1.5 px-3 rounded-xl border-none outline-none resize-none text-sm font-medium transition-all max-h-[120px] focus:ring-0",
+                isDarkMode 
+                  ? "bg-wa-bubble-in-dark placeholder:text-slate-500 text-wa-text-primary-dark" 
+                  : "bg-white placeholder:text-slate-400 text-wa-text-primary-light"
               )}
-            >
-              {t}
-            </button>
-          ))}
+              style={{ minHeight: '36px' }}
+            />
+          )}
         </div>
+
+        {/* Circular Right Trigger Button (Mic or Send) */}
+        <button
+          onClick={handleRightButtonClick}
+          className={cn(
+            "w-9.5 h-9.5 rounded-full flex items-center justify-center shrink-0 text-white transition-transform active:scale-90 shadow-md tap-highlight-none",
+            isRecording 
+              ? "bg-wa-green hover:bg-emerald-600 animate-pulse" 
+              : hasContent 
+                ? "bg-wa-green hover:bg-emerald-600" 
+                : isDarkMode ? "bg-slate-800 text-slate-400 hover:text-slate-200" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+          )}
+        >
+          {isRecording ? (
+            <Check size={16} />
+          ) : hasContent ? (
+            <Send size={16} className="ml-0.5" />
+          ) : (
+            <Mic size={16} />
+          )}
+        </button>
+
       </div>
 
-      {/* Fullscreen Lightbox for Image Attachments */}
+      {/* Lightbox for Image Attachments */}
       <AnimatePresence>
         {showFullscreen && attachmentType === 'image' && attachmentPreview && (
           <motion.div
@@ -403,13 +432,13 @@ export const MessageInput: React.FC<MessageInputProps> = ({
               exit={{ scale: 0.9 }}
               src={attachmentPreview}
               alt="Fullscreen Preview"
-              className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl border border-white/10"
+              className="max-w-full max-h-full rounded-xl object-contain shadow-2xl border border-white/5"
             />
             <button 
               onClick={() => setShowFullscreen(false)}
-              className="absolute top-4 right-4 p-3 rounded-full bg-slate-900/80 text-white border border-slate-800 hover:bg-slate-800 transition-colors"
+              className="absolute top-4 right-4 p-2 rounded-full bg-slate-900 text-white border border-slate-800 hover:bg-slate-800"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </motion.div>
         )}

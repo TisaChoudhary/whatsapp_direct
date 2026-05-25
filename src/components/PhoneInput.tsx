@@ -1,6 +1,5 @@
 import React from 'react';
-import { Phone, ClipboardPaste } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ClipboardPaste } from 'lucide-react';
 import { COUNTRY_CODES } from '../constants';
 import { CountryCode } from '../types';
 import { cn } from '../lib/utils';
@@ -29,65 +28,78 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   triggerHaptic,
 }) => {
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2 px-1">
-        <Phone size={10} className="text-emerald-500" /> Phone Number
-      </label>
-      <div className="flex gap-2">
-        <div className="relative group">
-          <select 
-            value={selectedCountry.code}
-            onChange={(e) => {
-              triggerHaptic('light');
-              setSelectedCountry(COUNTRY_CODES.find(c => c.code === e.target.value) || COUNTRY_CODES[0]);
-            }}
-            className={cn(
-              "h-14 px-4 rounded-2xl border appearance-none cursor-pointer focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all font-medium",
-              isDarkMode ? "bg-slate-900/80 border-slate-800" : "bg-slate-50 border-slate-200"
-            )}
-          >
-            {COUNTRY_CODES.map(c => (
-              <option key={c.code} value={c.code}>{c.flag} +{c.code}</option>
-            ))}
-          </select>
-        </div>
-        <div className="relative flex-1">
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => {
-              setPhone(e.target.value);
-              if (error) setError("");
-            }}
-            placeholder="98765 43210"
-            className={cn(
-              "w-full h-14 px-4 rounded-2xl border focus:ring-2 focus:ring-emerald-500/50 outline-none transition-all font-medium",
-              isDarkMode ? "bg-slate-900/80 border-slate-800 placeholder:text-slate-700" : "bg-white border-slate-200"
-            )}
-          />
-          <AnimatePresence>
-            {error && (
-              <motion.p 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-red-400 text-[10px] mt-1.5 absolute left-1 font-semibold"
-              >
-                {error}
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </div>
-        <button
-          onClick={onPaste}
+    <div className={cn(
+      "px-4 py-3 flex flex-wrap items-center gap-2.5 border-b text-sm transition-all",
+      isDarkMode 
+        ? "bg-wa-header-dark border-slate-800/80 text-wa-text-primary-dark" 
+        : "bg-wa-header-light border-slate-200 text-wa-text-primary-light"
+    )}>
+      <span className={cn(
+        "text-xs font-bold uppercase tracking-wider shrink-0",
+        isDarkMode ? "text-slate-400" : "text-slate-500"
+      )}>
+        To:
+      </span>
+      
+      {/* Country Select */}
+      <div className="relative shrink-0">
+        <select 
+          value={selectedCountry.code}
+          onChange={(e) => {
+            triggerHaptic('light');
+            setSelectedCountry(COUNTRY_CODES.find(c => c.code === e.target.value) || COUNTRY_CODES[0]);
+          }}
           className={cn(
-            "h-14 w-14 rounded-2xl border transition-all active:scale-90 flex items-center justify-center tap-highlight-none",
-            isDarkMode ? "bg-slate-900/80 border-slate-800 hover:bg-slate-800" : "bg-white border-slate-200 hover:bg-slate-50"
+            "h-9 px-2.5 rounded-lg border appearance-none cursor-pointer focus:ring-1 focus:ring-wa-green outline-none transition-all font-medium text-xs",
+            isDarkMode 
+              ? "bg-wa-sidebar-dark border-slate-800 text-wa-text-primary-dark" 
+              : "bg-white border-slate-300 text-wa-text-primary-light"
           )}
         >
-          <ClipboardPaste size={20} className="text-emerald-500" />
-        </button>
+          {COUNTRY_CODES.map(c => (
+            <option key={c.code} value={c.code}>{c.flag} +{c.code}</option>
+          ))}
+        </select>
       </div>
+
+      {/* Number Input */}
+      <div className="flex-1 min-w-[140px] relative">
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => {
+            setPhone(e.target.value);
+            if (error) setError("");
+          }}
+          placeholder="Enter phone number..."
+          className={cn(
+            "w-full h-9 px-3 rounded-lg border focus:ring-1 focus:ring-wa-green outline-none transition-all font-mono text-sm tracking-wide",
+            isDarkMode 
+              ? "bg-wa-sidebar-dark border-slate-800 placeholder:text-slate-600 text-wa-text-primary-dark" 
+              : "bg-white border-slate-300 placeholder:text-slate-400 text-wa-text-primary-light"
+          )}
+        />
+        {error && (
+          <span className="text-red-400 text-[10px] absolute right-3 top-1/2 -translate-y-1/2 font-semibold">
+            {error}
+          </span>
+        )}
+      </div>
+
+      {/* Action button (Paste) */}
+      <button
+        onClick={onPaste}
+        title="Paste Number"
+        className={cn(
+          "h-9 px-3 rounded-lg border transition-all active:scale-95 flex items-center justify-center gap-1.5 text-xs font-bold tap-highlight-none",
+          isDarkMode 
+            ? "bg-wa-sidebar-dark border-slate-800 hover:bg-slate-800 text-wa-green" 
+            : "bg-white border-slate-300 hover:bg-slate-50 text-wa-green-dark"
+        )}
+      >
+        <ClipboardPaste size={14} />
+        <span>Paste</span>
+      </button>
     </div>
   );
 };

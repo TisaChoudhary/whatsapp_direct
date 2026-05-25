@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Users, Search, Phone } from 'lucide-react';
+import React from 'react';
+import { Phone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
 
@@ -21,38 +21,28 @@ export const ContactsSection: React.FC<ContactsSectionProps> = ({
   isDarkMode,
   triggerHaptic,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const visibleContacts = contacts.slice(0, 50);
 
-  const filteredContacts = contacts.filter(c => 
-    c.name?.display.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.phones?.some(p => p.number.includes(searchTerm))
-  ).slice(0, 50); // Limit to 50 for performance
+  if (visibleContacts.length === 0) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-xs text-slate-500">No contacts found</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between px-1">
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
-          <Users size={10} className="text-emerald-500" /> Device Contacts
-        </span>
+    <div className="flex flex-col">
+      <div className={cn(
+        "px-4 py-2 text-[10px] font-bold uppercase tracking-wider",
+        isDarkMode ? "text-slate-500 bg-[#111b21]" : "text-slate-500 bg-slate-50/50"
+      )}>
+        <span>Contacts ({contacts.length})</span>
       </div>
 
-      <div className="relative group">
-        <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-        <input 
-          type="text"
-          placeholder="Search contacts..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className={cn(
-            "w-full h-12 pl-11 pr-4 rounded-2xl border outline-none transition-all text-sm",
-            isDarkMode ? "bg-slate-900/40 border-slate-900/50 focus:border-emerald-500/30" : "bg-white border-slate-100"
-          )}
-        />
-      </div>
-
-      <div className="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar">
+      <div className="divide-y divide-transparent">
         <AnimatePresence mode="popLayout">
-          {filteredContacts.map((contact, idx) => {
+          {visibleContacts.map((contact, idx) => {
             const phoneNumber = contact.phones?.[0]?.number;
             if (!phoneNumber) return null;
 
@@ -61,33 +51,36 @@ export const ContactsSection: React.FC<ContactsSectionProps> = ({
                 key={phoneNumber + idx}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.02 }}
+                transition={{ duration: 0.15, delay: idx * 0.01 }}
                 onClick={() => {
                   triggerHaptic('light');
                   onSelect(phoneNumber);
                 }}
                 className={cn(
-                  "w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-left",
-                  isDarkMode ? "bg-slate-900/20 border-slate-900/30 hover:bg-slate-900/40" : "bg-slate-50 border-slate-100"
+                  "w-full flex items-center justify-between px-4 py-3 cursor-pointer text-left transition-all border-b",
+                  isDarkMode 
+                    ? "bg-transparent border-[#222e35] hover:bg-[#202c33] text-wa-text-primary-dark" 
+                    : "bg-transparent border-[#e9edef] hover:bg-[#f0f2f5] text-wa-text-primary-light"
                 )}
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-xs font-bold">
+                <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                  {/* Round initial avatar */}
+                  <div className={cn(
+                    "w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0 shadow-sm",
+                    isDarkMode ? "bg-slate-800 text-wa-green" : "bg-slate-100 text-wa-green-dark border border-slate-200"
+                  )}>
                     {contact.name?.display[0] || '?'}
                   </div>
-                  <div>
-                    <p className="text-sm font-bold truncate max-w-[150px]">{contact.name?.display}</p>
-                    <p className="text-[10px] text-slate-500">{phoneNumber}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold truncate tracking-wide">{contact.name?.display}</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5 font-mono tracking-wide">{phoneNumber}</p>
                   </div>
                 </div>
-                <Phone size={14} className="text-emerald-500 opacity-40" />
+                <Phone size={13} className="text-wa-green opacity-60 ml-2 shrink-0" />
               </motion.button>
             );
           })}
         </AnimatePresence>
-        {filteredContacts.length === 0 && (
-          <p className="text-center text-xs text-slate-500 py-8">No contacts found</p>
-        )}
       </div>
     </div>
   );

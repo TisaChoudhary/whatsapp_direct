@@ -1,33 +1,91 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: "Outfit", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --animate-glow: glow 8s infinite alternate ease-in-out;
+  
+  /* WhatsApp theme colors */
+  --color-wa-green: #00a884;
+  --color-wa-green-dark: #008069;
+  
+  --color-wa-bg-dark: #0b141a;
+  --color-wa-header-dark: #202c33;
+  --color-wa-sidebar-dark: #111b21;
+  --color-wa-bubble-out-dark: #005c4b;
+  --color-wa-bubble-in-dark: #202c33;
+  --color-wa-text-primary-dark: #e9edef;
+  --color-wa-text-secondary-dark: #8696a0;
+
+  --color-wa-bg-light: #efeae2;
+  --color-wa-header-light: #f0f2f5;
+  --color-wa-sidebar-light: #ffffff;
+  --color-wa-bubble-out-light: #d9fdd3;
+  --color-wa-bubble-in-light: #ffffff;
+  --color-wa-text-primary-light: #111b21;
+  --color-wa-text-secondary-light: #667781;
+}
+
+@keyframes glow {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.15;
+  }
+  50% {
+    transform: translate(30px, -45px) scale(1.1);
+    opacity: 0.25;
+  }
+  100% {
+    transform: translate(-20px, 20px) scale(0.95);
+    opacity: 0.1;
+  }
 }
 
 @layer base {
   body {
-    @apply antialiased selection:bg-emerald-500/30;
+    @apply antialiased selection:bg-emerald-500/30 font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     touch-action: manipulation;
   }
 }
 
 @layer components {
-  .glass-card {
-    @apply backdrop-blur-xl bg-white/5 border border-white/10;
+  /* WhatsApp Doodle Background Pattern */
+  .wa-wallpaper-dark {
+    background-color: #0b141a;
+    background-image: 
+      radial-gradient(rgba(0, 168, 132, 0.08) 1.5px, transparent 0),
+      radial-gradient(rgba(0, 168, 132, 0.08) 1.5px, transparent 0);
+    background-size: 28px 28px;
+    background-position: 0 0, 14px 14px;
   }
-  
-  .glass-card-light {
-    @apply backdrop-blur-xl bg-white/70 border border-white/20;
+
+  .wa-wallpaper-light {
+    background-color: #efeae2;
+    background-image: 
+      radial-gradient(rgba(0, 128, 105, 0.06) 1.5px, transparent 0),
+      radial-gradient(rgba(0, 128, 105, 0.06) 1.5px, transparent 0);
+    background-size: 28px 28px;
+    background-position: 0 0, 14px 14px;
   }
 
   .tap-highlight-none {
     -webkit-tap-highlight-color: transparent;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -35,5 +93,5 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-800 rounded-full hover:bg-slate-700 transition-colors;
+  @apply bg-slate-700/50 rounded-full hover:bg-wa-green/60 transition-colors;
 }
